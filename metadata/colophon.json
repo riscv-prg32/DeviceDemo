@@ -1,0 +1,41 @@
+{
+  "abi": "prg32-colophon-1.0",
+  "title": "PRG32 Device Demo",
+  "subtitle": "Hardware and runtime smoke test",
+  "version": "1.0.0",
+  "release_date": "2026-06-08",
+  "developer": {
+    "name": "UniParthenope PRG32",
+    "url": "https://github.com/riscv-prg32/DeviceDemo"
+  },
+  "authors": [
+    {
+      "role": "academic supervisor / project lead",
+      "name": "Raffaele Montella - UniParthenope"
+    },
+    {
+      "role": "computer science student",
+      "name": "Ivan Cafiero - UniParthenope"
+    },
+    {
+      "role": "computer science student",
+      "name": "Simone Boscaglia - UniParthenope"
+    }
+  ],
+  "license": "MIT",
+  "copyright": "Copyright 2026 UniParthenope PRG32 contributors",
+  "acknowledgements": [
+    "Moved out of PRG32 setup firmware and maintained as a normal PRG32 cartridge."
+  ],
+  "controls": [
+    {
+      "input": "SELECT or B",
+      "action": "Advance to the next demo page"
+    },
+    {
+      "input": "Direction buttons",
+      "action": "Drive the interactive sketches on pages that use input"
+    }
+  ],
+  "start_prompt": "Press SELECT or B to browse demo pages"
+}

@@ -1,0 +1,28 @@
+{
+  "abi": "prg32-metadata-1.0",
+  "id": "org.uniparthenope.prg32.device-demo",
+  "title": "PRG32 Device Demo",
+  "version": "1.0.0",
+  "summary": "Hardware and runtime smoke test cartridge for the PRG32 educational platform.",
+  "tags": [
+    "demo",
+    "diagnostics",
+    "education",
+    "riscv",
+    "prg32"
+  ],
+  "assets": {
+    "icon": "icon.png",
+    "splash": "screenshot.png"
+  },
+  "architectures": [
+    {
+      "id": "esp32c6",
+      "file": "devicedemo-esp32c6.prg32"
+    },
+    {
+      "id": "qemu",
+      "file": "devicedemo-qemu.prg32"
+    }
+  ]
+}
