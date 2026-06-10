@@ -1,8 +1,9 @@
 # PRG32 Device Demo
 
 DeviceDemo is the PRG32 hardware and runtime smoke test packaged as a normal
-cartridge. It exercises display drawing, input, audio, sprites, playfields,
-status bands, and several classroom game sketches from the cartridge ABI.
+cartridge. It exercises display drawing, input, audio samples, tracker-style
+tracks, sprites, playfields, status bands, and several classroom game sketches
+from the cartridge ABI.
 
 The demo was formerly launched from PRG32 setup mode. It now lives here so it
 can be built, uploaded, versioned, and published through CartridgeStore like the
@@ -18,15 +19,24 @@ teaching games.
 ## Build
 
 Keep the PRG32 firmware repository next to this repository, or set
-`PRG32_REPO`:
+`PRG32_REPO`. Builds are portable ABI-table cartridges by default, so they do
+not need a firmware ELF from a specific board build:
 
 ```bash
 export PRG32_REPO=/path/to/PRG32
 export PRG32_ARCHITECTURE=esp32c6
-scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
+scripts/build.sh
 ```
 
 The output cartridge is written to `dist/devicedemo-esp32c6.prg32`.
+
+To build the legacy firmware-specific absolute-import format, set
+`PRG32_PORTABLE=0` and pass or configure the matching firmware ELF:
+
+```bash
+export PRG32_PORTABLE=0
+scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
+```
 
 ## Publish
 
@@ -35,10 +45,10 @@ CartridgeStore instance:
 
 ```bash
 export PRG32_ARCHITECTURE=esp32c6
-scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
+scripts/build.sh
 
 export PRG32_ARCHITECTURE=qemu
-scripts/build.sh "$PRG32_REPO/build-qemu/PRG32.elf"
+scripts/build.sh
 
 scripts/pack-store-bundle.sh
 

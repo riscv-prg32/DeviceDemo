@@ -1,6 +1,6 @@
 #include "prg32.h"
 
-#define DEMO_PAGE_COUNT 13
+#define DEMO_PAGE_COUNT 14
 #define DEMO_FIELD_TOP 40
 #define DEMO_FIELD_BOTTOM 184
 
@@ -22,6 +22,46 @@ static prg32_band_mode_t demo_bottom_mode;
 static int demo_page;
 static uint32_t demo_frame;
 static uint32_t demo_last_input;
+static int demo_audio_ready;
+static int demo_audio_started;
+
+static const uint8_t demo_kick_sample[] = {
+    128, 198, 244, 255, 239, 206, 168, 136,
+    108, 86, 68, 58, 55, 60, 72, 89,
+    108, 125, 138, 146, 149, 146, 139, 130,
+    122, 116, 113, 114, 118, 123, 128, 128,
+};
+
+static const uint8_t demo_snare_sample[] = {
+    128, 242, 38, 211, 65, 186, 78, 224,
+    45, 174, 93, 233, 58, 151, 106, 202,
+    74, 168, 96, 192, 83, 154, 111, 177,
+    99, 146, 119, 160, 112, 141, 124, 128,
+};
+
+static const uint8_t demo_bass_wave[] = {
+    128, 158, 188, 215, 235, 247, 251, 244,
+    228, 204, 175, 143, 111, 81, 55, 35,
+    23, 20, 28, 45, 70, 99, 128, 157,
+    186, 211, 228, 236, 233, 221, 201, 175,
+};
+
+static const prg32_audio_event_t demo_audio_track[] = {
+    {0, PRG32_AUDIO_CMD_SET_TEMPO, 0, 132},
+    {0, PRG32_AUDIO_CMD_NOTE_ON, 0, 36},
+    {0, PRG32_AUDIO_CMD_PLAY_SAMPLE, 0, 0},
+    {6, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
+    {2, PRG32_AUDIO_CMD_NOTE_ON, 0, 43},
+    {4, PRG32_AUDIO_CMD_PLAY_SAMPLE, 1, 0},
+    {4, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
+    {0, PRG32_AUDIO_CMD_NOTE_ON, 0, 41},
+    {8, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
+    {0, PRG32_AUDIO_CMD_PLAY_SAMPLE, 0, 0},
+    {8, PRG32_AUDIO_CMD_NOTE_ON, 0, 48},
+    {4, PRG32_AUDIO_CMD_PLAY_SAMPLE, 1, 0},
+    {4, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
+    {0, PRG32_AUDIO_CMD_JUMP, 0, 0},
+};
 
 static void append_char(char *dst, int capacity, int *pos, char ch) {
     if (!dst || !pos || capacity <= 0) {
@@ -246,6 +286,108 @@ static void draw_system(uint32_t frame) {
     prg32_gfx_rect(44, 146, pulse, 14, PRG32_COLOR_MAGENTA);
     prg32_gfx_rect(44 + pulse, 146, 100 - pulse, 14, PRG32_COLOR_BLUE);
     draw_footer();
+}
+
+static void demo_audio_prepare(void) {
+    if (demo_audio_ready) {
+        return;
+    }
+
+    if (!prg32_audio_init(NULL)) {
+        return;
+    }
+
+    prg32_audio_register_sample(0,
+                                demo_kick_sample,
+                                sizeof(demo_kick_sample),
+                                48,
+                                0,
+                                0,
+                                0);
+    prg32_audio_register_sample(1,
+                                demo_snare_sample,
+                                sizeof(demo_snare_sample),
+                                60,
+                                0,
+                                0,
+                                0);
+    prg32_audio_register_sample(2,
+                                demo_bass_wave,
+                                sizeof(demo_bass_wave),
+                                36,
+                                PRG32_AUDIO_SAMPLE_LOOP,
+                                0,
+                                sizeof(demo_bass_wave));
+
+    prg32_instrument_desc_t bass = {
+        .sample_id = 2,
+        .default_volume = 132,
+        .default_pan = PRG32_AUDIO_PAN_CENTER,
+        .attack = 2,
+        .decay = 5,
+        .sustain = 220,
+        .release = 8,
+    };
+    prg32_audio_register_instrument(0, &bass);
+    prg32_audio_register_track(0,
+                               demo_audio_track,
+                               sizeof(demo_audio_track) / sizeof(demo_audio_track[0]));
+    prg32_audio_set_master_volume(180);
+    demo_audio_ready = 1;
+}
+
+static void demo_audio_start(void) {
+    demo_audio_prepare();
+    if (!demo_audio_ready || demo_audio_started) {
+        return;
+    }
+    prg32_audio_set_tempo(132);
+    prg32_audio_play_track(0);
+    demo_audio_started = 1;
+}
+
+static void draw_audio_showcase(uint32_t frame) {
+    demo_audio_start();
+    if ((frame % 32u) == 0u) {
+        prg32_audio_play_sample_pan(0, 210, 1024, PRG32_AUDIO_PAN_LEFT);
+    }
+    if ((frame % 32u) == 16u) {
+        prg32_audio_play_sample_pan(1, 170, 1200, PRG32_AUDIO_PAN_RIGHT);
+    }
+
+    prg32_gfx_clear(PRG32_COLOR_BLACK);
+    draw_title("AUDIO + GRAPHICS SHOWCASE", "SAMPLES, TRACK, PAN, PULSE");
+
+    for (int i = 0; i < 24; ++i) {
+        int phase = (int)((frame * (uint32_t)(i + 2) + (uint32_t)i * 17u) % 96u);
+        int h = 12 + tri_wave((uint32_t)phase, 96, 82);
+        int x = 14 + i * 12;
+        uint16_t color = (i % 3) == 0 ? PRG32_COLOR_CYAN :
+            (i % 3) == 1 ? PRG32_COLOR_MAGENTA : PRG32_COLOR_YELLOW;
+        prg32_gfx_rect(x, 174 - h, 8, h, color);
+        prg32_gfx_rect(x + 2, 174 - h, 4, h / 3, PRG32_COLOR_WHITE);
+    }
+
+    int cx = 160;
+    int cy = 108;
+    for (int r = 0; r < 5; ++r) {
+        int radius = 10 + r * 13 + tri_wave(frame + (uint32_t)r * 9u, 64, 8);
+        uint16_t color = r & 1 ? PRG32_COLOR_BLUE : PRG32_COLOR_GREEN;
+        draw_line(cx - radius, cy, cx, cy - radius / 2, color);
+        draw_line(cx, cy - radius / 2, cx + radius, cy, color);
+        draw_line(cx + radius, cy, cx, cy + radius / 2, color);
+        draw_line(cx, cy + radius / 2, cx - radius, cy, color);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        int x = (int)((frame * 5u + (uint32_t)i * 31u) % 340u) - 10;
+        int y = 48 + (int)(((frame * 3u) + (uint32_t)i * 23u) % 116u);
+        prg32_sprite_draw_8x8(x, y, sprite_bits, PRG32_COLOR_WHITE, PRG32_COLOR_BLACK);
+    }
+
+    prg32_gfx_text8(36, 184, demo_audio_ready ? "TRACK LOOPING FROM C ASSETS" : "AUDIO INIT UNAVAILABLE",
+                    demo_audio_ready ? PRG32_COLOR_GREEN : PRG32_COLOR_RED,
+                    PRG32_COLOR_BLACK);
 }
 
 typedef struct {
@@ -1626,15 +1768,16 @@ static void draw_wing_commander(uint32_t frame) {
 
 static void reset_demo_page(int page) {
     if (page == 1) demo_prepare_playfields();
-    if (page == 3) reset_pong_demo();
-    if (page == 4) reset_breakout_demo();
-    if (page == 5) reset_invaders_demo();
-    if (page == 6) reset_pac_demo();
-    if (page == 7) reset_tetris_demo();
-    if (page == 9) reset_asteroids_demo();
-    if (page == 10) reset_platform_demo();
-    if (page == 11) reset_raycaster_demo();
-    if (page == 12) reset_wing_demo();
+    if (page == 3) demo_audio_start();
+    if (page == 4) reset_pong_demo();
+    if (page == 5) reset_breakout_demo();
+    if (page == 6) reset_invaders_demo();
+    if (page == 7) reset_pac_demo();
+    if (page == 8) reset_tetris_demo();
+    if (page == 10) reset_asteroids_demo();
+    if (page == 11) reset_platform_demo();
+    if (page == 12) reset_raycaster_demo();
+    if (page == 13) reset_wing_demo();
 }
 
 void devicedemo_init(void) {
@@ -1644,6 +1787,8 @@ void devicedemo_init(void) {
     demo_page = 0;
     demo_frame = 0;
     demo_last_input = 0;
+    demo_audio_ready = 0;
+    demo_audio_started = 0;
     prg32_gfx_set_fullscreen(0);
     prg32_band_set_mode(PRG32_BAND_TOP, PRG32_BAND_MODE_FPS);
     prg32_band_set_mode(PRG32_BAND_BOTTOM, PRG32_BAND_MODE_CUSTOM);
@@ -1669,15 +1814,16 @@ void devicedemo_draw(void) {
         case 0: draw_overview(demo_frame); break;
         case 1: draw_graphics(demo_frame); break;
         case 2: draw_system(demo_frame); break;
-        case 3: draw_pong(demo_frame); break;
-        case 4: draw_breakout(demo_frame); break;
-        case 5: draw_space_invaders(demo_frame); break;
-        case 6: draw_pacman(demo_frame); break;
-        case 7: draw_tetris(demo_frame); break;
-        case 8: draw_pole_position(demo_frame); break;
-        case 9: draw_asteroids(demo_frame); break;
-        case 10: draw_platformer(demo_frame); break;
-        case 11: draw_raycaster(demo_frame); break;
+        case 3: draw_audio_showcase(demo_frame); break;
+        case 4: draw_pong(demo_frame); break;
+        case 5: draw_breakout(demo_frame); break;
+        case 6: draw_space_invaders(demo_frame); break;
+        case 7: draw_pacman(demo_frame); break;
+        case 8: draw_tetris(demo_frame); break;
+        case 9: draw_pole_position(demo_frame); break;
+        case 10: draw_asteroids(demo_frame); break;
+        case 11: draw_platformer(demo_frame); break;
+        case 12: draw_raycaster(demo_frame); break;
         default: draw_wing_commander(demo_frame); break;
     }
 
@@ -1694,5 +1840,9 @@ void devicedemo_shutdown(void) {
     prg32_tile_clear(PRG32_COLOR_BLACK);
     prg32_playfield_clear(0, 0);
     prg32_playfield_clear(1, 0);
+    if (demo_audio_ready) {
+        prg32_audio_stop_track();
+        prg32_audio_stop_all();
+    }
     prg32_gfx_set_fullscreen(demo_was_fullscreen);
 }

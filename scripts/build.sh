@@ -5,15 +5,23 @@ repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 prg32_repo="${PRG32_REPO:-"$repo_dir/../PRG32"}"
 firmware_elf="${1:-"${PRG32_FIRMWARE_ELF:-"$prg32_repo/build/PRG32.elf"}"}"
 architecture="${PRG32_ARCHITECTURE:-esp32c6}"
+portable="${PRG32_PORTABLE:-1}"
+
+build_args=()
+if [[ "$portable" == "1" || "$portable" == "true" || "$portable" == "yes" ]]; then
+  build_args+=(--portable)
+else
+  build_args+=(--firmware-elf "$firmware_elf" --legacy-absolute-imports)
+fi
 
 mkdir -p "$repo_dir/dist"
 
 python3 "$prg32_repo/tools/prg32_game.py" build \
   "$repo_dir/src/devicedemo.c" \
-  --firmware-elf "$firmware_elf" \
   --entry-prefix devicedemo \
   --name devicedemo \
-  --out "$repo_dir/dist/devicedemo-$architecture.raw.prg32"
+  --out "$repo_dir/dist/devicedemo-$architecture.raw.prg32" \
+  "${build_args[@]}"
 
 python3 "$prg32_repo/tools/prg32_game.py" attach-metadata \
   "$repo_dir/dist/devicedemo-$architecture.raw.prg32" \
