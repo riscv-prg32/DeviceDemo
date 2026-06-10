@@ -57,6 +57,29 @@ Use `http://192.168.4.1` when the board is running its setup access point. If
 the board is joined to classroom Wi-Fi, replace it with the IP address shown in
 PRG32 setup mode.
 
+If upload fails with `cartridge linked for a different runtime address`, the
+cartridge and the firmware currently running on the board disagree about the
+cartridge RAM address. Use one of these paths:
+
+- Rebuild and flash the PRG32 firmware from the same portable ABI-table branch,
+  then rebuild this cartridge with the default portable build.
+- Or build the legacy firmware-specific cartridge from the exact
+  `PRG32.elf` that was flashed to the board.
+
+For the legacy path:
+
+```bash
+export PRG32_REPO=/path/to/PRG32
+export PRG32_PORTABLE=0
+export PRG32_ARCHITECTURE=esp32c6
+scripts/build.sh "$PRG32_REPO/build-esp32c6/PRG32.elf"
+
+python3 "$PRG32_REPO/tools/prg32_game.py" upload \
+  dist/devicedemo-esp32c6.prg32 \
+  --url http://192.168.1.37 \
+  --slot cart0
+```
+
 ## Publish
 
 Build the `esp32c6` and `qemu` variants, pack the bundle, then publish it to a
