@@ -38,6 +38,25 @@ export PRG32_PORTABLE=0
 scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
 ```
 
+## Deploy to a Physical Device
+
+Build the ESP32-C6 cartridge, connect your computer to the PRG32 device network
+or the same classroom Wi-Fi, then upload the cartridge with the PRG32 tool:
+
+```bash
+export PRG32_REPO=/path/to/PRG32
+export PRG32_ARCHITECTURE=esp32c6
+scripts/build.sh
+
+python3 "$PRG32_REPO/tools/prg32_game.py" upload \
+  dist/devicedemo-esp32c6.prg32 \
+  --url http://192.168.4.1
+```
+
+Use `http://192.168.4.1` when the board is running its setup access point. If
+the board is joined to classroom Wi-Fi, replace it with the IP address shown in
+PRG32 setup mode.
+
 ## Publish
 
 Build the `esp32c6` and `qemu` variants, pack the bundle, then publish it to a
