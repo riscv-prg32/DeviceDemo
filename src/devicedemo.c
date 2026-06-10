@@ -24,6 +24,8 @@ static uint32_t demo_frame;
 static uint32_t demo_last_input;
 static int demo_audio_ready;
 static int demo_audio_started;
+static uint32_t demo_audio_last_step;
+static uint8_t demo_audio_step;
 
 static const uint8_t demo_kick_sample[] = {
     128, 198, 244, 255, 239, 206, 168, 136,
@@ -46,21 +48,21 @@ static const uint8_t demo_bass_wave[] = {
     186, 211, 228, 236, 233, 221, 201, 175,
 };
 
-static const prg32_audio_event_t demo_audio_track[] = {
-    {0, PRG32_AUDIO_CMD_SET_TEMPO, 0, 132},
-    {0, PRG32_AUDIO_CMD_NOTE_ON, 0, 36},
-    {0, PRG32_AUDIO_CMD_PLAY_SAMPLE, 0, 0},
-    {6, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
-    {2, PRG32_AUDIO_CMD_NOTE_ON, 0, 43},
-    {4, PRG32_AUDIO_CMD_PLAY_SAMPLE, 1, 0},
-    {4, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
-    {0, PRG32_AUDIO_CMD_NOTE_ON, 0, 41},
-    {8, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
-    {0, PRG32_AUDIO_CMD_PLAY_SAMPLE, 0, 0},
-    {8, PRG32_AUDIO_CMD_NOTE_ON, 0, 48},
-    {4, PRG32_AUDIO_CMD_PLAY_SAMPLE, 1, 0},
-    {4, PRG32_AUDIO_CMD_NOTE_OFF, 0, 0},
-    {0, PRG32_AUDIO_CMD_JUMP, 0, 0},
+typedef struct {
+    uint8_t note;
+    uint8_t sample;
+    int8_t pan;
+} demo_audio_step_t;
+
+static const demo_audio_step_t demo_audio_track[] = {
+    {36, 0, PRG32_AUDIO_PAN_LEFT},
+    {43, 2, PRG32_AUDIO_PAN_CENTER},
+    {41, 1, PRG32_AUDIO_PAN_RIGHT},
+    {48, 2, PRG32_AUDIO_PAN_CENTER},
+    {39, 0, PRG32_AUDIO_PAN_LEFT},
+    {46, 1, PRG32_AUDIO_PAN_RIGHT},
+    {43, 2, PRG32_AUDIO_PAN_CENTER},
+    {51, 1, PRG32_AUDIO_PAN_RIGHT},
 };
 
 static void append_char(char *dst, int capacity, int *pos, char ch) {
@@ -297,41 +299,6 @@ static void demo_audio_prepare(void) {
         return;
     }
 
-    prg32_audio_register_sample(0,
-                                demo_kick_sample,
-                                sizeof(demo_kick_sample),
-                                48,
-                                0,
-                                0,
-                                0);
-    prg32_audio_register_sample(1,
-                                demo_snare_sample,
-                                sizeof(demo_snare_sample),
-                                60,
-                                0,
-                                0,
-                                0);
-    prg32_audio_register_sample(2,
-                                demo_bass_wave,
-                                sizeof(demo_bass_wave),
-                                36,
-                                PRG32_AUDIO_SAMPLE_LOOP,
-                                0,
-                                sizeof(demo_bass_wave));
-
-    prg32_instrument_desc_t bass = {
-        .sample_id = 2,
-        .default_volume = 132,
-        .default_pan = PRG32_AUDIO_PAN_CENTER,
-        .attack = 2,
-        .decay = 5,
-        .sustain = 220,
-        .release = 8,
-    };
-    prg32_audio_register_instrument(0, &bass);
-    prg32_audio_register_track(0,
-                               demo_audio_track,
-                               sizeof(demo_audio_track) / sizeof(demo_audio_track[0]));
     prg32_audio_set_master_volume(180);
     demo_audio_ready = 1;
 }
@@ -342,18 +309,39 @@ static void demo_audio_start(void) {
         return;
     }
     prg32_audio_set_tempo(132);
-    prg32_audio_play_track(0);
+    demo_audio_last_step = 0;
+    demo_audio_step = 0;
     demo_audio_started = 1;
+}
+
+static void demo_audio_sequence(uint32_t frame) {
+    if (!demo_audio_ready) {
+        return;
+    }
+
+    uint32_t now = prg32_ticks_ms();
+    if (demo_audio_last_step != 0 && now - demo_audio_last_step < 170u) {
+        return;
+    }
+    demo_audio_last_step = now;
+
+    const demo_audio_step_t *step = &demo_audio_track[demo_audio_step];
+    prg32_audio_set_channel_pan(0, step->pan);
+    prg32_audio_note(step->note, 135);
+    if (step->sample == 0) {
+        prg32_audio_sample_u8(demo_kick_sample, sizeof(demo_kick_sample), 8000);
+    } else if (step->sample == 1) {
+        prg32_audio_sample_u8(demo_snare_sample, sizeof(demo_snare_sample), 11025);
+    } else if ((frame & 1u) == 0u) {
+        prg32_audio_sample_u8(demo_bass_wave, sizeof(demo_bass_wave), 8000);
+    }
+    demo_audio_step = (uint8_t)((demo_audio_step + 1u) %
+        (sizeof(demo_audio_track) / sizeof(demo_audio_track[0])));
 }
 
 static void draw_audio_showcase(uint32_t frame) {
     demo_audio_start();
-    if ((frame % 32u) == 0u) {
-        prg32_audio_play_sample_pan(0, 210, 1024, PRG32_AUDIO_PAN_LEFT);
-    }
-    if ((frame % 32u) == 16u) {
-        prg32_audio_play_sample_pan(1, 170, 1200, PRG32_AUDIO_PAN_RIGHT);
-    }
+    demo_audio_sequence(frame);
 
     prg32_gfx_clear(PRG32_COLOR_BLACK);
     draw_title("AUDIO + GRAPHICS SHOWCASE", "SAMPLES, TRACK, PAN, PULSE");
@@ -385,7 +373,7 @@ static void draw_audio_showcase(uint32_t frame) {
         prg32_sprite_draw_8x8(x, y, sprite_bits, PRG32_COLOR_WHITE, PRG32_COLOR_BLACK);
     }
 
-    prg32_gfx_text8(36, 184, demo_audio_ready ? "TRACK LOOPING FROM C ASSETS" : "AUDIO INIT UNAVAILABLE",
+    prg32_gfx_text8(36, 184, demo_audio_ready ? "C SEQUENCED SAMPLE TRACK" : "AUDIO INIT UNAVAILABLE",
                     demo_audio_ready ? PRG32_COLOR_GREEN : PRG32_COLOR_RED,
                     PRG32_COLOR_BLACK);
 }
@@ -1841,7 +1829,6 @@ void devicedemo_shutdown(void) {
     prg32_playfield_clear(0, 0);
     prg32_playfield_clear(1, 0);
     if (demo_audio_ready) {
-        prg32_audio_stop_track();
         prg32_audio_stop_all();
     }
     prg32_gfx_set_fullscreen(demo_was_fullscreen);
