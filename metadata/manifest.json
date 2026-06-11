@@ -2,8 +2,8 @@
   "abi": "prg32-metadata-1.0",
   "id": "org.uniparthenope.prg32.device-demo",
   "title": "PRG32 Device Demo",
-  "version": "1.0.0",
-  "summary": "Hardware and runtime smoke test cartridge for the PRG32 educational platform.",
+  "version": "1.1.0",
+  "summary": "Portable PRG32 hardware/runtime smoke test with audio samples, tracker music, and graphics effects.",
   "tags": [
     "demo",
     "diagnostics",

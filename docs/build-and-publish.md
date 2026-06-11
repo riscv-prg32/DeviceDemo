@@ -6,7 +6,9 @@ uploadable cartridge. The cartridge entry prefix is `devicedemo`.
 ## Prerequisites
 
 - A local checkout of `riscv-prg32/PRG32`.
-- A PRG32 resident firmware build, for example `PRG32/build/PRG32.elf`.
+- A PRG32 checkout from the portable ABI-table tooling branch or newer.
+- A PRG32 resident firmware build, for example `PRG32/build/PRG32.elf`, only
+  when building the legacy absolute-import format.
 - The RISC-V toolchain used by `PRG32/tools/prg32_game.py`.
 - A running CartridgeStore instance when publishing.
 
@@ -20,19 +22,31 @@ export PRG32_REPO=/path/to/PRG32
 
 ```bash
 export PRG32_ARCHITECTURE=esp32c6
-scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
+scripts/build.sh
 ```
 
-The script writes `dist/devicedemo-esp32c6.prg32`.
+The script writes `dist/devicedemo-esp32c6.prg32`. By default this is a
+portable ABI-table cartridge and is not tied to one firmware ELF.
 
 ## Build for QEMU
 
 ```bash
 export PRG32_ARCHITECTURE=qemu
-scripts/build.sh "$PRG32_REPO/build-qemu/PRG32.elf"
+scripts/build.sh
 ```
 
 The script writes `dist/devicedemo-qemu.prg32`.
+
+## Build the Legacy Absolute-Import Format
+
+Use this only for firmware images that do not yet support portable ABI-table
+cartridges:
+
+```bash
+export PRG32_PORTABLE=0
+export PRG32_ARCHITECTURE=esp32c6
+scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
+```
 
 ## Upload to a Board
 
@@ -60,10 +74,10 @@ Build both architecture variants first, then pack the flat Store bundle:
 
 ```bash
 export PRG32_ARCHITECTURE=esp32c6
-scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
+scripts/build.sh
 
 export PRG32_ARCHITECTURE=qemu
-scripts/build.sh "$PRG32_REPO/build-qemu/PRG32.elf"
+scripts/build.sh
 
 scripts/pack-store-bundle.sh
 ```

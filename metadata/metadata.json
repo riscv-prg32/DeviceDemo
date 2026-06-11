@@ -2,9 +2,9 @@
   "abi": "prg32-metadata-1.0",
   "id": "org.uniparthenope.prg32.device-demo",
   "title": "PRG32 Device Demo",
-  "version": "1.0.0",
-  "summary": "Hardware and runtime smoke test cartridge for the PRG32 educational platform.",
-  "description": "PRG32 Device Demo exercises the cartridge-facing display, input, audio, status band, sprite, tile, playfield, and classroom game sketch APIs. It replaces the former setup-owned firmware demo so the same smoke test can be built, uploaded, and published like any other PRG32 cartridge.",
+  "version": "1.1.0",
+  "summary": "Portable PRG32 hardware/runtime smoke test with audio samples, tracker music, and graphics effects.",
+  "description": "PRG32 Device Demo exercises the cartridge-facing display, input, audio sample, tracker music, status band, sprite, tile, playfield, and classroom game sketch APIs. It builds as a portable ABI-table cartridge by default and replaces the former setup-owned firmware demo so the same smoke test can be built, uploaded, and published like any other PRG32 cartridge.",
   "authors": [
     {
       "name": "Raffaele Montella",
@@ -30,7 +30,7 @@
     "prg32"
   ],
   "created_at": "2026-06-08T00:00:00Z",
-  "updated_at": "2026-06-08T00:00:00Z",
+  "updated_at": "2026-06-11T00:00:00Z",
   "runtime": {
     "platform": "PRG32",
     "isa": "RV32I",
