@@ -1,8 +1,10 @@
 #include "prg32.h"
 
-#define DEMO_PAGE_COUNT 14
+#define DEMO_PAGE_COUNT 15
 #define DEMO_FIELD_TOP 40
 #define DEMO_FIELD_BOTTOM 184
+#define SPRITE24_W 24
+#define SPRITE24_H 24
 
 static const uint8_t tile_grid[8] = {
     0xff, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xff,
@@ -26,6 +28,8 @@ static int demo_audio_ready;
 static int demo_audio_started;
 static uint32_t demo_audio_last_step;
 static uint8_t demo_audio_step;
+static uint16_t demo_sprite24[SPRITE24_W * SPRITE24_H];
+static int demo_sprite24_ready;
 
 static const uint8_t demo_kick_sample[] = {
     128, 198, 244, 255, 239, 206, 168, 136,
@@ -224,6 +228,47 @@ static int demo_clamp(int value, int lo, int hi) {
         return hi;
     }
     return value;
+}
+
+static void demo_prepare_sprite24(void) {
+    if (demo_sprite24_ready) {
+        return;
+    }
+
+    for (int y = 0; y < SPRITE24_H; ++y) {
+        for (int x = 0; x < SPRITE24_W; ++x) {
+            uint16_t color = PRG32_COLOR_WHITE;
+            int cx = x - 11;
+            int cy = y - 11;
+            int d2 = cx * cx + cy * cy;
+            if (d2 < 118) {
+                color = 0x7bef;
+            }
+            if (d2 < 78) {
+                color = ((x + y) & 2) ? PRG32_COLOR_CYAN : PRG32_COLOR_BLUE;
+            }
+            if (x >= 4 && x <= 19 && y >= 7 && y <= 16) {
+                color = ((x / 3 + y / 2) & 1) ? PRG32_COLOR_MAGENTA : PRG32_COLOR_YELLOW;
+            }
+            if ((x >= 6 && x <= 8 && y >= 5 && y <= 7) ||
+                (x >= 15 && x <= 17 && y >= 5 && y <= 7)) {
+                color = PRG32_COLOR_WHITE;
+            }
+            if ((x >= 7 && x <= 8 && y >= 6 && y <= 7) ||
+                (x >= 16 && x <= 17 && y >= 6 && y <= 7)) {
+                color = PRG32_COLOR_BLACK;
+            }
+            if (x >= 7 && x <= 16 && y >= 18 && y <= 19) {
+                color = PRG32_COLOR_RED;
+            }
+            if ((x + y) < 6 || (23 - x + y) < 6 ||
+                (x + 23 - y) < 6 || ((23 - x) + (23 - y)) < 6) {
+                color = PRG32_COLOR_WHITE;
+            }
+            demo_sprite24[y * SPRITE24_W + x] = color;
+        }
+    }
+    demo_sprite24_ready = 1;
 }
 
 static int rect_hit(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) {
@@ -1335,6 +1380,36 @@ static void draw_asteroids(uint32_t frame) {
     draw_footer();
 }
 
+static void draw_sprite24_showcase(uint32_t frame) {
+    demo_prepare_sprite24();
+
+    prg32_gfx_clear(PRG32_COLOR_BLACK);
+    draw_title("24x24 RGB565 SPRITES", "MULTICOLOR + WHITE TRANSPARENCY");
+
+    for (int y = 44; y < 176; y += 12) {
+        for (int x = 0; x < PRG32_GAME_W; x += 12) {
+            uint16_t color = ((x / 12 + y / 12) & 1) ? 0x2104 : 0x3186;
+            prg32_gfx_rect(x, y, 12, 12, color);
+        }
+    }
+
+    for (int i = 0; i < 7; ++i) {
+        int lane_x = 18 + i * 44;
+        int bob = tri_wave(frame + (uint32_t)i * 17u, 72, 34);
+        int x = lane_x + (int)(((frame + (uint32_t)i * 11u) % 22u) / 2u);
+        int y = 58 + bob + (i & 1) * 28;
+        prg32_sprite_draw_24x24(x, y, demo_sprite24);
+    }
+
+    int hero_x = 148 + tri_wave(frame, 96, 22) - 11;
+    int hero_y = 96 + tri_wave(frame + 32u, 80, 18) - 9;
+    prg32_gfx_rect(hero_x - 8, hero_y - 8, 40, 40, PRG32_COLOR_BLUE);
+    prg32_gfx_rect(hero_x - 5, hero_y - 5, 34, 34, PRG32_COLOR_BLACK);
+    prg32_sprite_draw_24x24(hero_x, hero_y, demo_sprite24);
+
+    prg32_gfx_text8(44, 184, "prg32_sprite_draw_24x24()", PRG32_COLOR_GREEN, PRG32_COLOR_BLACK);
+}
+
 #define PLATFORM_TILE_CLOUD 20
 #define PLATFORM_TILE_GRASS 21
 #define PLATFORM_TILE_DIRT 22
@@ -1763,9 +1838,10 @@ static void reset_demo_page(int page) {
     if (page == 7) reset_pac_demo();
     if (page == 8) reset_tetris_demo();
     if (page == 10) reset_asteroids_demo();
-    if (page == 11) reset_platform_demo();
-    if (page == 12) reset_raycaster_demo();
-    if (page == 13) reset_wing_demo();
+    if (page == 11) demo_prepare_sprite24();
+    if (page == 12) reset_platform_demo();
+    if (page == 13) reset_raycaster_demo();
+    if (page == 14) reset_wing_demo();
 }
 
 void devicedemo_init(void) {
@@ -1810,8 +1886,9 @@ void devicedemo_draw(void) {
         case 8: draw_tetris(demo_frame); break;
         case 9: draw_pole_position(demo_frame); break;
         case 10: draw_asteroids(demo_frame); break;
-        case 11: draw_platformer(demo_frame); break;
-        case 12: draw_raycaster(demo_frame); break;
+        case 11: draw_sprite24_showcase(demo_frame); break;
+        case 12: draw_platformer(demo_frame); break;
+        case 13: draw_raycaster(demo_frame); break;
         default: draw_wing_commander(demo_frame); break;
     }
 

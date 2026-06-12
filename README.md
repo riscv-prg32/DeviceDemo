@@ -2,8 +2,8 @@
 
 DeviceDemo is the PRG32 hardware and runtime smoke test packaged as a normal
 cartridge. It exercises display drawing, input, audio samples, tracker-style
-tracks, sprites, playfields, status bands, and several classroom game sketches
-from the cartridge ABI.
+tracks, 8x8 and 24x24 multicolor sprites, playfields, status bands, and several
+classroom game sketches from the cartridge ABI.
 
 The demo was formerly launched from PRG32 setup mode. It now lives here so it
 can be built, uploaded, versioned, and published through CartridgeStore like the

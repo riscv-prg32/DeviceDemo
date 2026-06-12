@@ -3,7 +3,7 @@
   "id": "org.uniparthenope.prg32.device-demo",
   "title": "PRG32 Device Demo",
   "version": "1.1.0",
-  "summary": "Portable PRG32 hardware/runtime smoke test with audio samples, tracker music, and graphics effects.",
+  "summary": "Portable PRG32 hardware/runtime smoke test with audio samples, tracker music, and 24x24 sprite effects.",
   "tags": [
     "demo",
     "diagnostics",
