@@ -48,7 +48,7 @@ export PRG32_REPO=/path/to/PRG32
 export PRG32_ARCHITECTURE=esp32c6
 scripts/build.sh
 
-python3 "$PRG32_REPO/tools/prg32_game.py" upload \
+PYTHONPATH="$PRG32_REPO" python3 -m prg32 esp32c6 upload \
   dist/devicedemo-esp32c6.prg32 \
   --url http://192.168.4.1
 ```
@@ -74,7 +74,7 @@ export PRG32_PORTABLE=0
 export PRG32_ARCHITECTURE=esp32c6
 scripts/build.sh "$PRG32_REPO/build-esp32c6/PRG32.elf"
 
-python3 "$PRG32_REPO/tools/prg32_game.py" upload \
+PYTHONPATH="$PRG32_REPO" python3 -m prg32 esp32c6 upload \
   dist/devicedemo-esp32c6.prg32 \
   --url http://192.168.1.37 \
   --slot cart0
@@ -94,7 +94,7 @@ scripts/build.sh
 
 scripts/pack-store-bundle.sh
 
-python3 "$PRG32_REPO/tools/prg32_game.py" publish-bundle \
+PYTHONPATH="$PRG32_REPO" python3 -m prg32 store publish-bundle \
   dist/devicedemo-store-bundle.zip \
   --store-url http://192.168.1.42:5080 \
   --token "$PRG32_STORE_TOKEN"

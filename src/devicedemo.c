@@ -327,13 +327,13 @@ static void demo_audio_sequence(uint32_t frame) {
 
     const demo_audio_step_t *step = &demo_audio_track[demo_audio_step];
     prg32_audio_set_channel_pan(0, step->pan);
-    prg32_audio_note(step->note, 135);
+    prg32_audio_note(0, PRG32_DEFAULT_INSTRUMENT_ID, step->note, 135, 170);
     if (step->sample == 0) {
-        prg32_audio_sample_u8(demo_kick_sample, sizeof(demo_kick_sample), 8000);
+        prg32_buzzer_sample_u8(demo_kick_sample, sizeof(demo_kick_sample), 8000);
     } else if (step->sample == 1) {
-        prg32_audio_sample_u8(demo_snare_sample, sizeof(demo_snare_sample), 11025);
+        prg32_buzzer_sample_u8(demo_snare_sample, sizeof(demo_snare_sample), 11025);
     } else if ((frame & 1u) == 0u) {
-        prg32_audio_sample_u8(demo_bass_wave, sizeof(demo_bass_wave), 8000);
+        prg32_buzzer_sample_u8(demo_bass_wave, sizeof(demo_bass_wave), 8000);
     }
     demo_audio_step = (uint8_t)((demo_audio_step + 1u) %
         (sizeof(demo_audio_track) / sizeof(demo_audio_track[0])));
@@ -1791,7 +1791,7 @@ void devicedemo_update(void) {
         ((input & PRG32_BTN_B) && !(demo_last_input & PRG32_BTN_B))) {
         demo_page = (demo_page + 1) % DEMO_PAGE_COUNT;
         reset_demo_page(demo_page);
-        prg32_audio_beep(880, 40);
+        prg32_buzzer_tone(880, 40, 50);
         prg32_input_wait_released(PRG32_BTN_B | PRG32_BTN_SELECT);
     }
     demo_last_input = input;

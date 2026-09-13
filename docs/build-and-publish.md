@@ -6,10 +6,10 @@ uploadable cartridge. The cartridge entry prefix is `devicedemo`.
 ## Prerequisites
 
 - A local checkout of `riscv-prg32/PRG32`.
-- A PRG32 checkout from the portable ABI-table tooling branch or newer.
+- A PRG32 checkout from current `main`.
 - A PRG32 resident firmware build, for example `PRG32/build/PRG32.elf`, only
   when building the legacy absolute-import format.
-- The RISC-V toolchain used by `PRG32/tools/prg32_game.py`.
+- The RISC-V toolchain used by `python3 -m prg32`.
 - A running CartridgeStore instance when publishing.
 
 Set `PRG32_REPO` if the PRG32 repository is not next to this repository:
@@ -51,7 +51,7 @@ scripts/build.sh "$PRG32_REPO/build/PRG32.elf"
 ## Upload to a Board
 
 ```bash
-python3 "$PRG32_REPO/tools/prg32_game.py" upload \
+PYTHONPATH="$PRG32_REPO" python3 -m prg32 esp32c6 upload \
   dist/devicedemo-esp32c6.prg32 \
   --url http://192.168.4.1
 ```
@@ -62,7 +62,7 @@ Wi-Fi.
 ## Stage in QEMU
 
 ```bash
-python3 "$PRG32_REPO/tools/prg32_game.py" upload-qemu \
+PYTHONPATH="$PRG32_REPO" python3 -m prg32 qemu upload \
   dist/devicedemo-qemu.prg32 \
   --flash "$PRG32_REPO/build-qemu/flash_image.bin" \
   --partitions "$PRG32_REPO/partitions_prg32.csv"
@@ -87,7 +87,7 @@ The bundle is `dist/devicedemo-store-bundle.zip`.
 ## Publish to CartridgeStore
 
 ```bash
-python3 "$PRG32_REPO/tools/prg32_game.py" publish-bundle \
+PYTHONPATH="$PRG32_REPO" python3 -m prg32 store publish-bundle \
   dist/devicedemo-store-bundle.zip \
   --store-url http://192.168.1.42:5080 \
   --token "$PRG32_STORE_TOKEN"
